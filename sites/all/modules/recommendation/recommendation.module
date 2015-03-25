@@ -1,0 +1,123 @@
+<?php
+
+/**
+ * Hook Field Formatter Info
+ * 
+ *  return array
+  label: The human-readable name of the formatter type.
+  description: A short description for the formatter type.
+  field types: An array of field types the formatter supports.
+  settings: An array whose keys are the names of the settings available for the formatter type, and whose values are the default values for those settings.
+
+ */
+function recommendation_field_formatter_info() {
+  $info = array(
+    
+    'price_plain' => array(
+      'label' => t('Price Plain'),
+      'field types' => array('commerce_price'),
+    ),
+    'price_rounded' => array(
+      'label' => t('Price Rounded'),
+      'field types' => array('commerce_price'),
+    ),
+  );
+  
+  return $info;
+}
+
+function recommendation_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  
+
+  switch ($display['type']) {
+    case 'price_plain':
+      // Common case: each value is displayed individually in a sub-element
+      // keyed by delta. The field.tpl.php template specifies the markup
+      // wrapping each value.
+      foreach ($items as $delta => $item) {
+        $element[$delta] = array(
+          '#markup' => commerce_currency_amount_to_decimal($item['amount'], $currency_code),
+        );
+      }
+      break;
+
+    case 'price_rounded':
+      foreach ($items as $delta => $item) {
+        $element[$delta] = array(
+          // @todo - check commerce price extras for function
+          '#markup' => commerce_round(1, $item['amount']),
+        );
+      }
+      break;
+  }
+
+  return $element;
+}
+
+function recommendation_entity_info() {
+  /**
+   * id
+   * created
+   * uid
+   * product
+   */
+  
+  $return = array(
+    'recommendation' => array(
+      'label' => t('Recommendation'),
+      'entity class' => 'Entity',
+      'controller class' => 'EntityAPIController',
+      // Add views support
+      'views controller class' => 'EntityDefaultViewsController',
+      'base table' => 'recommendation',
+      'module' => 'recommendation',
+      'fieldable' => TRUE,
+      'entity keys' => array(
+        'id' => 'recid',
+      ),
+      'bundles' => array(
+        'recommendation' => array('label' => 'Recommendation'),
+      ),
+    ),
+  );
+  
+  return $return;
+}
+
+// Commerce Guys recommended route for creating fields on an Entity!
+
+function recommendation_flush_caches() {
+  $field = field_info_field('recommendation_price');
+  if (!$field) {
+    commerce_price_create_instance('recommendation_price', 'recommendation', 'recommendation', t('Price'));
+  }
+}
+
+// react to adding product to cart function moved to recommendation.rules.inc
+
+/**
+ * callback function - see time_ago in recommendation.info.inc
+ */
+function recommendation_get_properties($rec,array $options, $name) {
+  switch ($name) {
+    case 'time_ago':
+      $datetime = new DateTime();
+      $datetime->setTimestamp($rec->created);
+      $now = new DateTime();
+      $interval = $datetime->diff($now);
+      return t('@time hours ago', array('@time' => $interval->format('%h')));
+      break;
+  }
+}
+
+/**
+ * Add views support
+ */
+
+function recommendation_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'recommendation') . '/includes/views'
+  );
+}

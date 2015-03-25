@@ -1,0 +1,48 @@
+<?php
+
+
+function recommendation_schema() {
+  $schema = array();
+
+  $schema['recommendation'] = array(
+    'description' => 'The base table for recommendations.',
+    'fields' => array(
+      'recid' => array(
+        'description' => 'The primary identifier for a recommendaion, used internally only.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => 'The {users}.uid that created this recommendation.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the recommendation was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'product_id' => array(
+        'description' => 'The primary identifier for a product, used internally only.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0
+      ),
+    ),
+    'primary key' => array('recid'),
+    'foreign keys' => array(
+      'product' => array(
+        'table' => 'commerce_product',
+        'columns' => array('product_id' => 'product_id'),
+      ),
+    ),
+  );
+
+  return $schema;
+}
+
+// @todo install routine
